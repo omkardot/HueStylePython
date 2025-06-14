@@ -1,7 +1,9 @@
 services:
   - type: web
-    name: skin-tone-detector
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
+    name: face-auth-app
+    runtime: python
+    buildCommand: ./build.sh
     startCommand: python app.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
