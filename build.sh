@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-pip install --upgrade pip setuptools wheel build
-pip install -r requirements.txt
+
+pip install --upgrade pip setuptools wheel
+pip install --no-cache-dir -r requirements.txt
