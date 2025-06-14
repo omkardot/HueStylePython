@@ -84,14 +84,36 @@ def detect():
     if "image" not in request.files:
         log("No image file in request.")
         return jsonify({"error": "No image uploaded"}), 400
+
     file = request.files["image"]
     image_path = "temp_img.png"
     file.save(image_path)
     log(f"Saved image to {image_path}")
-    result = detect_skin_tone(image_path)
-    os.remove(image_path)
-    log("Temp image deleted after processing.")
-    return jsonify({"skin_tone": result})
+
+    try:
+        # Read and process image
+        image_bgr = cv2.imread(image_path)
+        face_roi = extract_face_region(image_bgr)
+        if face_roi is None:
+            os.remove(image_path)
+            return jsonify({"error": "No face detected"}), 400
+
+        face_rgb = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
+        dominant_rgb = get_dominant_color(face_rgb)
+        tone = classify_skin_tone(dominant_rgb)
+        hex_color = '#{:02x}{:02x}{:02x}'.format(*dominant_rgb)
+
+        log("Temp image deleted after processing.")
+        os.remove(image_path)
+
+        return jsonify({
+            "skin_tone": tone,
+            "dominant_hex": hex_color
+        }), 200
+    except Exception as e:
+        log(f"Error in detect endpoint: {str(e)}")
+        os.remove(image_path)
+        return jsonify({"error": f"Error processing image: {str(e)}"}), 500
 
 @app.route("/detect_base64", methods=["POST"])
 def detect_skin_tone_base64():
