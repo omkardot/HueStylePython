@@ -116,42 +116,43 @@ def recommend_colors():
         logging.error(f"Error in recommend_colors: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/detect", methods=["POST"])
 def detect():
     logging.info("Detect endpoint hit.")
+
     if "image" not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
 
     file = request.files["image"]
     image_path = "temp_img.png"
     file.save(image_path)
+
     try:
         image_bgr = cv2.imread(image_path)
         face_roi = extract_face_region(image_bgr)
+
         if face_roi is None:
             os.remove(image_path)
             return jsonify({"error": "No face detected"}), 400
+
         face_rgb = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
         dominant_rgb = get_dominant_color(face_rgb)
         tone = classify_skin_tone(dominant_rgb)
         hex_color = '#{:02x}{:02x}{:02x}'.format(*dominant_rgb)
 
-        # Dummy color palette
-        saved_colors = [
-            "#ff5733", "#c70039", "#900c3f", "#581845",
-            "#f1c40f", "#2ecc71", "#1abc9c"
-        ]
-        recommended = recommend_colors(hex_color, saved_colors)
-
         os.remove(image_path)
+
         return jsonify({
             "skin_tone": tone,
-            "dominant_hex": hex_color,
-            "recommended_colors": recommended
+            "dominant_hex": hex_color
         }), 200
+
     except Exception as e:
         os.remove(image_path)
+        logging.error(f"Error in detect: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, threaded=True)
