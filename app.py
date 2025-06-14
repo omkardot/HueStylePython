@@ -4,10 +4,12 @@ import numpy as np
 from sklearn.cluster import KMeans
 from collections import Counter
 import os
+from PIL import Image
+import base64
+from io import BytesIO
 
 app = Flask(__name__)
 
-# Logging helper
 def log(msg):
     print(f"[DEBUG] {msg}")
 
@@ -90,6 +92,29 @@ def detect():
     os.remove(image_path)
     log("Temp image deleted after processing.")
     return jsonify({"skin_tone": result})
+
+@app.route("/detect_base64", methods=["POST"])
+def detect_skin_tone_base64():
+    try:
+        data = request.get_json()
+        if not data or "image_base64" not in data:
+            return jsonify({"error": "Missing image_base64"}), 400
+
+        image_data = base64.b64decode(data["image_base64"])
+        image = Image.open(BytesIO(image_data)).convert("RGB")
+        image = np.array(image)
+
+        face_roi = extract_face_region(image)
+        if face_roi is None:
+            return jsonify({"error": "No face detected"}), 400
+
+        dominant_rgb = get_dominant_color(face_roi)
+        tone = classify_skin_tone(dominant_rgb)
+
+        return jsonify({"skin_tone": tone})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     log("Starting Flask server...")
