@@ -80,12 +80,21 @@ def classify_skin_tone(rgb):
         logging.error(f"Error in classify_skin_tone: {str(e)}")
         return "Unknown"
 
+
 @app.route("/recommend_colors", methods=["POST"])
-def recommend_colors(skin_hex, saved_colors):
+def recommend_colors():
     try:
+        data = request.get_json()
+        skin_hex = data.get("skin_hex")
+        saved_colors = data.get("saved_colors")
+
+        if not skin_hex or not saved_colors:
+            return jsonify({"error": "Missing skin_hex or saved_colors"}), 400
+
         skin_rgb = hex_to_rgb(skin_hex)
         skin_brightness = perceived_brightness(skin_rgb)
         color_contrasts = []
+
         for hex_code in saved_colors:
             color_rgb = hex_to_rgb(hex_code)
             brightness = perceived_brightness(color_rgb)
@@ -95,14 +104,17 @@ def recommend_colors(skin_hex, saved_colors):
                 "hexCode": hex_code,
                 "contrast": contrast
             })
+
         color_contrasts.sort(key=lambda x: x['contrast'], reverse=True)
         recommended = color_contrasts[:5]
         if len(recommended) < 5:
             recommended += color_contrasts[5:5 + (5 - len(recommended))]
-        return [{"name": c["name"], "hexCode": c["hexCode"]} for c in recommended]
+
+        return jsonify({"recommended": [{"name": c["name"], "hexCode": c["hexCode"]} for c in recommended]})
+
     except Exception as e:
         logging.error(f"Error in recommend_colors: {str(e)}")
-        return []
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/detect", methods=["POST"])
 def detect():
