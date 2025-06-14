@@ -80,6 +80,7 @@ def classify_skin_tone(rgb):
         logging.error(f"Error in classify_skin_tone: {str(e)}")
         return "Unknown"
 
+@app.route("/recommend_colors", methods=["POST"])
 def recommend_colors(skin_hex, saved_colors):
     try:
         skin_rgb = hex_to_rgb(skin_hex)
