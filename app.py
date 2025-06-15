@@ -96,6 +96,11 @@ def recommend_colors():
         color_contrasts = []
 
         for hex_code in saved_colors:
+            print(f"Processing color: {hex_code}")
+            print(f"Received hex: {hex_code}")
+            if not hex_code or not hex_code.startswith("#") or len(hex_code) != 7:
+                print(f"Skipping invalid hex: {hex_code}")
+                continue
             color_rgb = hex_to_rgb(hex_code)
             brightness = perceived_brightness(color_rgb)
             contrast = abs(skin_brightness - brightness)
